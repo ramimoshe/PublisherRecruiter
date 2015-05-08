@@ -1,18 +1,19 @@
 var https = require("https");
 var request = require("request");
 var mongoClient = require('mongodb').MongoClient;
-var assert = require('assert');
+
+var mongoUrl = 'mongodb://localhost:27017/publisherRecruiter';
 
 var googleKey = "AIzaSyDctaGcuexOtvyNDFbespSLhInXAvEiqgU";
 var baseHost = "https://www.googleapis.com/customsearch/v1?";
 var cx = "010604737292908226044:f7s-wgg22yi";
-var q = "facebook";
+var q = '"http://static.wixstatic.com"';
 var dateRestrict = "y5";
 var filter = "1";
 var alt = "json";
 var fields = "items(displayLink,fileFormat,formattedUrl,labels,link,title),queries,searchInformation(formattedTotalResults,totalResults),url";
 var totalPages = 2;
-var urlPerPage = 50;
+var urlPerPage = 10;
 
 function getSearchUrl(start, count) {
 	return baseHost +
@@ -27,14 +28,18 @@ function getSearchUrl(start, count) {
 		"key=" + googleKey;
 };
 
-
-var mongoUrl = 'mongodb://localhost:27017/myproject';
 mongoClient.connect(mongoUrl, function (err, db) {
-	assert.equal(null, err);
+	if (err){
+		console.log("Failed connect to db, " + JSON.stringify(err));
+		return;
+	}
+	
 	console.log("Connected correctly to server");
-	findUrls(function (res) {
+	findUrls(function (res, isLastBulk) {
 		insertDocuments(db, res, function () {
-			//db.close();
+			if (isLastBulk){
+				db.close();
+			}
 		});
 	});
 });
@@ -57,32 +62,19 @@ function findUrls(callback) {
 		var startPage;
 		if (pageNumber * urlPerPage == 0) { startPage = 1; } else { startPage = pageNumber * urlPerPage; };
 		console.log(getSearchUrl());
-		getRawData(getSearchUrl(startPage, urlPerPage), callback);
+		var isLastBulk;
+		if (pageNumber + 1 == totalPages) { isLastBulk = true; } else { isLastBulk = false; }
+		
+		getRawData(getSearchUrl(startPage, urlPerPage), isLastBulk, callback);
 	}
 };
 
-function getRawData(url, callback) {
-	/*https.get(url, function (res) {
-		console.log("Got response: " + res.statusCode);
-		res.on("data", function (data) {
-			process.stdout.write("--------------" + data);
-			for (var i = 0; i < data.items.length; i++) {
-				callback(data.items[i]);
-			}
-		});
-
-	}).on('error', function (e) {
-		console.log("Got error: " + e.message);
-	});*/
-
+function getRawData(url, pageNumber, callback) {
 	request(url, function (error, response, body) {
 		if (!error && response.statusCode == 200) {
+			var jsonObject = JSON.parse(body);	
 			
-			var jsonObject = JSON.parse(body);
-			console.log(Object.keys(jsonObject));		
-			for (var i = 0; i < jsonObject.items.length; i++) {
-				callback(jsonObject.items[i]);
-			}
+			callback(jsonObject.items, pageNumber);
 		}
 	});
 };
