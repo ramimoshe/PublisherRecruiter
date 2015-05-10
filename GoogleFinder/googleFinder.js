@@ -30,7 +30,7 @@ function getSearchUrl(start, count) {
 		"key=" + _googleKey;
 };
 
-function start() {
+/*function start() {
 	mongoClient.connect(_mongoUrl, function (err, db) {
 		if (err) {
 			console.log("Failed connect to db, " + JSON.stringify(err));
@@ -47,8 +47,31 @@ function start() {
 						start();
 					}, _runningInterval);
 				}
-			});
 		});
+	});*/
+
+function start(){
+	findUrls(function (res, isLastBulk) {
+		send(res.items);
+	});
+};
+
+function send(items) {
+	var headers = {
+		'Content-Type': 'application/json'
+	}
+
+	var options = {
+		url: 'http://localhost:1234/',
+		method: 'POST',
+		headers: headers,
+		form: { items: items }
+	};
+
+	request(options, function (error, response, body) {
+		if (!error && response.statusCode == 200) {
+			console.log(body);
+		}
 	});
 };
 
@@ -80,8 +103,8 @@ function getRawData(url, pageNumber, callback) {
 	request(url, function (error, response, body) {
 		if (!error && response.statusCode == 200) {
 			var jsonObject = JSON.parse(body);
-			_totalPages = _overrideTotalPages || jsonObject.queries.request.totalResults/_urlPerPage;
-			
+			_totalPages = _overrideTotalPages || jsonObject.queries.request.totalResults / _urlPerPage;
+
 			callback(jsonObject.items, pageNumber);
 		}
 	});
@@ -89,13 +112,13 @@ function getRawData(url, pageNumber, callback) {
 
 
 module.exports = {
-	start: function(googleKey, cx, q, runningInterval, overrideTotalPage){
+	start: function (googleKey, cx, q, runningInterval, overrideTotalPage) {
 		_googleKey = googleKey;
 		_cx = cx;
 		_q = q;
 		_runningInterval = runningInterval;
 		_overrideTotalPages = overrideTotalPage;
-		
+
 		start();
 	}
 };
