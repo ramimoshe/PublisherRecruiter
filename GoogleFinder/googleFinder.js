@@ -13,7 +13,7 @@ var _dateRestrict = "y5";
 var _filter = "1";
 var _alt = "json";
 var _fields = "items(displayLink,fileFormat,formattedUrl,labels,link,title),queries,searchInformation(formattedTotalResults,totalResults),url";
-var _totalPages = 2;
+var _totalPages = 1;
 var _overrideTotalPages;
 var _urlPerPage = 10;
 
@@ -52,7 +52,8 @@ function getSearchUrl(start, count) {
 
 function start(){
 	findUrls(function (res, isLastBulk) {
-		send(res.items);
+		//console.log("res: " + JSON.stringify(res));
+		send(res);
 	});
 };
 
@@ -60,7 +61,8 @@ function send(items) {
 	var headers = {
 		'Content-Type': 'application/json'
 	}
-
+	//console.log("-----: " + JSON.stringify(items) + items);
+	
 	var options = {
 		url: 'http://localhost:1234/',
 		method: 'POST',
