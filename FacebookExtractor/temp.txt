@@ -159,3 +159,39 @@ function getFacebookFromUrlResource(urlResourcesJson, url, callback) {
 	  
 	});
 };
+
+
+var MongoClient = require('mongodb').MongoClient;
+/*function start() {
+	mongoClient.connect(_mongoUrl, function (err, db) {
+		if (err) {
+			console.log("Failed connect to db, " + JSON.stringify(err));
+			return;
+		}
+
+		console.log("Connected correctly to server");
+		findUrls(function (res, isLastBulk) {
+			insertDocuments(db, res, function () {
+				if (isLastBulk) {
+					db.close();
+					if (_runningInterval == 0) return;
+					setTimeout(function() {
+						start();
+					}, _runningInterval);
+				}
+		});
+	});*/
+	
+	
+	function insertDocuments(db, data, callback) {
+	var collection = db.collection('rawData');
+	collection.insert(data, function (err, result) {
+		if (err) {
+			console.log("ERROR: " + JSON.stringify(err));
+			return;
+		}
+
+		console.log("new bulk inserted");
+		callback(result);
+	});
+}

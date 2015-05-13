@@ -1,0 +1,19 @@
+{
+	"googleEngine":{
+		"baseHost" : "https://www.googleapis.com/customsearch/v1?",
+		"googleKey" : "AIzaSyDctaGcuexOtvyNDFbespSLhInXAvEiqgU",
+		"cx" : "010604737292908226044:f7s-wgg22yi",
+		"q" : "http://static.wixstatic.com",
+		"dateRestrict" : "y5",
+		"filter" : "1",
+		"alt" : "json",
+		"fields" : "items(displayLink,fileFormat,formattedUrl,labels,link,title),queries,searchInformation(formattedTotalResults,totalResults),url",
+		"urlPerPage" : 10
+	},
+	
+	"facebookExtractorUrlService" : "http://localhost:1234/wix",
+	"mongoUrl" : "mongodb://localhost:27017/publisherRecruiter",
+	"totalPages" : 1,
+	"overrideTotalPages" : null,
+	"runningInterval" : 60000
+}
