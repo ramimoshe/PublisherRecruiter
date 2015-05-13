@@ -54,14 +54,14 @@ function serverHandler(request, reply) {
 	return reply("Done");
 }
 
-function saveData(websiteUrl, facebookUrl) {
-	console.log("data saved websiteUrl: " + websiteUrl + "\nfacebookUrl: " + facebookUrl);
-}
-
 function addHttpIfNotExist(url) {
     if (!/^(?:f|ht)tps?\:\/\//.test(url)) {
         url = "http://" + url;
     }
 	
     return url;
+}
+
+function saveData(websiteUrl, facebookUrl) {
+	console.log("websiteUrl: " + websiteUrl + "\nfacebookUrl: " + facebookUrl);
 }

@@ -1,7 +1,7 @@
 var Request = require("request");
 var Nconf = require('nconf');
 
-Nconf.argv().env().file({ file: './app.config' });
+Nconf.argv().env().file({ file: './config.json' });
 
 var _runningInterval = Nconf.get("runningInterval");
 var _mongoUrl = Nconf.get("mongoUrl");
@@ -20,8 +20,7 @@ var _overrideTotalPages = Nconf.get("overrideTotalPages");;
 var _urlPerPage = Nconf.get("googleEngine:urlPerPage");
 
 
-
-function start(){
+function start() {
 	findUrls(function (res, isLastBulk) {
 		send(res);
 	});
@@ -40,9 +39,9 @@ function getSearchUrl(start, count) {
 		"key=" + _googleKey;
 }
 
-function send(items) { 
+function send(items) {
 	var headers = { 'Content-Type': 'application/json' };
-	
+
 	var options = {
 		url: _facebookExtractorUrlService,
 		method: 'POST',
@@ -51,13 +50,13 @@ function send(items) {
 	};
 
 	Request(options, function (error, response, body) {
-		if (!error && response.statusCode == 200) {
-			console.log(body);
+		if (error || response.statusCode != 200) {
+			console.log("Failed to send request to " + _facebookExtractorUrlService + " exception: " + error);
 		}
 	});
 }
 
-function findUrls(callback) { 
+function findUrls(callback) {
 	for (var pageNumber = 0; pageNumber < _totalPages; pageNumber++) {
 		var startPage;
 		if (pageNumber * _urlPerPage == 0) { startPage = 1; } else { startPage = pageNumber * _urlPerPage; };
@@ -70,12 +69,14 @@ function findUrls(callback) {
 
 function getRawData(url, pageNumber, callback) {
 	Request(url, function (error, response, body) {
-		if (!error && response.statusCode == 200) {
-			var jsonObject = JSON.parse(body);
-			_totalPages = _overrideTotalPages || jsonObject.queries.request.totalResults / _urlPerPage;
-
-			callback(jsonObject.items, pageNumber);
+		if (error || response.statusCode != 200) {
+			console.log("Failed to send request to " + url + " exception: " + error);
 		}
+
+		var jsonObject = JSON.parse(body);
+		_totalPages = _overrideTotalPages || jsonObject.queries.request.totalResults / _urlPerPage;
+
+		callback(jsonObject.items, pageNumber);	
 	});
 }
 

@@ -20,6 +20,11 @@ function findFacebook(url, callback) {
 		}
 
 		var urlResourcesJson = getResourceJson(html);
+		if (urlResourcesJson == null) {
+			console.log("Failed to find facebook from " + url);
+			return;
+		}
+		
 		extractFacebookFromUrlResource(urlResourcesJson, url, function (facebookUrl) {
 			callback(url, facebookUrl);
 		});
