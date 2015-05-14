@@ -7,7 +7,7 @@
 		"dateRestrict" : "y5",
 		"filter" : "1",
 		"alt" : "json",
-		"fields" : "items(displayLink,fileFormat,formattedUrl,labels,link,title),queries,searchInformation(formattedTotalResults,totalResults),url",
+		"fields" : "items(displayLink,link,title),queries,searchInformation(formattedTotalResults,totalResults),url",
 		"urlPerPage" : 10
 	},
 	

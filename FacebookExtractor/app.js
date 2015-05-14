@@ -1,9 +1,13 @@
 var cluster = require('cluster');
 var Hapi = require('hapi');
+var Async = require('async');
+var Nconf = require('nconf');
 var WixProvider = require('./Providers/Wix.js');
 var Storage = require('./storage.js');
 
-var numOfWorkers = 2;
+Nconf.argv().env().file({ file: './config.json' });
+
+var numOfWorkers = Nconf.get("numberOfWorkers");;
 
 if (cluster.isMaster) {
 	for (var i = 0; i < numOfWorkers; i++) {
@@ -47,12 +51,20 @@ if (cluster.isMaster) {
 }
 
 function serverHandler(request, reply) {
-	for (var i = 0; i < request.payload.items.length; i++) {
-		var siteUrl = addHttpIfNotExist(request.payload.items[i].displayLink);
-		WixProvider.findFacebook(siteUrl, saveData);
-	}
-	
-	return reply("Done");
+	Async.each(request.payload.items, 
+		function(item, callback) {
+			var siteUrl = addHttpIfNotExist(item.displayLink);
+			WixProvider.findFacebook(siteUrl, function(websiteUrl, facebookUrl){
+				saveData(websiteUrl, facebookUrl, item.title);
+			});
+		}, function(err){
+			if(err) {
+			  console.log('Failed retrive data ' + err);
+			}
+			
+			return reply("Done");
+		}
+	);
 }
 
 function addHttpIfNotExist(url) {
@@ -63,7 +75,7 @@ function addHttpIfNotExist(url) {
     return url;
 }
 
-function saveData(websiteUrl, facebookUrl) {
+function saveData(websiteUrl, facebookUrl, title) {
 	console.log("websiteUrl: " + websiteUrl + "\nfacebookUrl: " + facebookUrl);
 	Storage(facebookUrl, websiteUrl, null, null, function(err){
 		if (err){
