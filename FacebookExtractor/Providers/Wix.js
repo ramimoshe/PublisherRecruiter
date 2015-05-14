@@ -1,11 +1,12 @@
-var Http = require('http');
 var Request = require('request');
 var Url = require('url');
 var Zlib = require('zlib');
+var HttpClient = require('./httpClient');
 
 var firstPattern = new RegExp(/"masterPage":.*?]/);
 var secPattern = new RegExp(/\[.*/);
 var facebookFromJsonPattern = new RegExp(/www.facebook.com.*?"/);
+var mailPattern = new RegExp(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/);
 
 function findFacebook(url, callback) {
 	Request(url, function (err, res, html) {
@@ -31,38 +32,12 @@ function findFacebook(url, callback) {
 	});
 }
 
-function extractFacebookFromUrlResource(urlResourcesJson, url, callback) {
-	var urlParsed = Url.parse(urlResourcesJson);
-	var request = Http.get({ host: urlParsed.host,
-                         path: urlParsed.path,
-                         port: 80,
-                         headers: { 'accept-encoding': 'gzip,deflate' } });
-	request.on('response', function(response) {
-	  switch (response.headers['content-encoding']) {
-	    case 'gzip':
-			var buffer = [];
-			var gunzip = Zlib.createGunzip();            
-	        response.pipe(gunzip);
-			gunzip.on('data', function(data) {
-	            buffer.push(data.toString());
-	        }).on("end", function() {
-				var facebook = facebookFromJsonPattern.exec(buffer.join(""));
-				callback(facebook);
-	        }).on("error", function(e) {
-	            callback(e);
-	        });
-	      break;
-	    default:		
-			var body = '';
-			response.on('data', function (d) {
-				body += d;
-			});
-			response.on('end', function () {
-				var facebook = facebookFromJsonPattern.exec(body);
-				callback(facebook);
-			});
-	      break;
-	  };
+function extractFacebookFromUrlResource(urlResourcesJson, callback) {
+	HttpClient.get(urlResourcesJson, function(err, body){
+		if (err) { return console.log(err);}
+		
+		var facebook = facebookFromJsonPattern.exec(body);
+		callback(null, facebook);
 	});
 }
 

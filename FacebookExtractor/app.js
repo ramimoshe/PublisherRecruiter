@@ -1,6 +1,7 @@
 var cluster = require('cluster');
 var Hapi = require('hapi');
 var WixProvider = require('./Providers/Wix.js');
+var Storage = require('./storage.js');
 
 var numOfWorkers = 2;
 
@@ -64,4 +65,9 @@ function addHttpIfNotExist(url) {
 
 function saveData(websiteUrl, facebookUrl) {
 	console.log("websiteUrl: " + websiteUrl + "\nfacebookUrl: " + facebookUrl);
+	Storage(facebookUrl, websiteUrl, null, null, function(err){
+		if (err){
+			console.log("Error: " + err);
+		}
+	});
 }
