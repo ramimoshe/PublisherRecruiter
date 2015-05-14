@@ -1,35 +1,51 @@
 var Request = require('request');
 var Url = require('url');
 var Zlib = require('zlib');
+var Async = require('async');
 var HttpClient = require('./httpClient');
 
-var firstPattern = new RegExp(/"masterPage":.*?]/);
-var secPattern = new RegExp(/\[.*/);
+var urlsResourcesStep1Pattern = new RegExp(/"masterPage":.*?]/);
+var urlsResourcesStep2Pattern = new RegExp(/\[.*/);
 var facebookFromJsonPattern = new RegExp(/www.facebook.com.*?"/);
 var mailPattern = new RegExp(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/);
 
 function findFacebook(url, callback) {
-	Request(url, function (err, res, html) {
-		if (err) {
-			console.log("failed to get webpage from " + url + " err: " + JSON.stringify(err));
-			return;
-		}
+	HttpClient.get(url, function(err, body){
+		if (err) { return console.log(err);}
 		
-		if (res.statusCode != 200 && res.statusCode != 201) {
-			console.log("the url " + url + " return status code of " + res.statusCode);
-			return;
-		}
-
-		var urlResourcesJson = getResourceJson(html);
-		if (urlResourcesJson == null) {
-			console.log("Failed to find facebook from " + url);
-			return;
-		}
+		var resourcesUrls = getResourceJson(body);
+		if (resourcesUrls == null || resourcesUrls.length == 0) { return console.log("Failed to find facebook from " + url); }
 		
-		extractFacebookFromUrlResource(urlResourcesJson, url, function (facebookUrl) {
-			callback(url, facebookUrl);
+		extractFacebookFromUrlResource(resourcesUrls[0], url, function (facebookUrl) {
+			extractEmailFromResourcesUrls(resourcesUrls, function (emails){
+				callback(url, facebookUrl, emails);	
+			});
 		});
 	});
+}
+
+function extractEmailFromResourcesUrls(resourcesUrls, callback) {
+	var emails = [];
+	Async.each(resourcesUrls, 
+		function(url, callback) {
+			
+			HttpClient.get(url, function(err, body){
+				if (err) { 
+					console.log(err);
+				}
+				var email = mailPattern.exec(body);
+				if(email != undefined && email != null) { 
+					emails.push(email); 
+				}
+			});
+		}, function(err){
+			if( err ) {
+			  return console.log('Failed retrive emails ' + err);
+			}
+			
+			callback(emails);
+		}
+	);
 }
 
 function extractFacebookFromUrlResource(urlResourcesJson, callback) {
@@ -46,18 +62,22 @@ function getResourceJson(html) {
 		return null;
 	}
 
-	var result = firstPattern.exec(html);
+	var result = urlsResourcesStep1Pattern.exec(html);
 	if (result == null || result == undefined) {
 		return null;
 	}
 
-	result = secPattern.exec(result);
+	result = urlsResourcesStep2Pattern.exec(result);
 	var jsonObj = JSON.parse(result);
 	if (jsonObj == undefined || jsonObj == null || !(jsonObj instanceof Array)) {
 		return null;
 	}
+	
+	for (var i = 0; i < jsonObj.length; i++) {
+		jsonObj[i] = jsonObj[i].replace("%20", "");
+	}
 
-	return jsonObj[0].replace("%20", "");
+	return jsonObj;
 }
 
 
