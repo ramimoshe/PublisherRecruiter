@@ -4,7 +4,6 @@ var Nconf = require('nconf');
 Nconf.argv().env().file({ file: './config.json' });
 
 var _runningInterval = Nconf.get("runningInterval");
-var _mongoUrl = Nconf.get("mongoUrl");
 var _facebookExtractorUrlService = Nconf.get("facebookExtractorUrlService");
 
 var _googleKey = Nconf.get("googleEngine:googleKey");
@@ -51,7 +50,10 @@ function send(items) {
 
 	Request(options, function (error, response, body) {
 		if (error || response.statusCode != 200) {
-			console.log("Failed to send request to " + _facebookExtractorUrlService + " exception: " + error);
+			console.log("Failed to send request to " + _facebookExtractorUrlService +  
+						" exception: " + error);
+		}else{
+			console.log("response from facebookExtractor: " + body);
 		}
 	});
 }

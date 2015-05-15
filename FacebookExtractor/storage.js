@@ -1,36 +1,43 @@
-
+var Nconf = require('nconf');
 var MongoClient = require('mongodb').MongoClient;
 
-var database;
+Nconf.argv().env().file({ file: './config.json' });
 
-function save(facebookUrl, websiteUrl, email, firstName, lastName, callback){
-	var document = createDbDocument(facebookUrl, websiteUrl);
-	if (database === undefined || database == null) {
-		MongoClient.connect('mongodb://127.0.0.1:27017/test', function(err, db) {
+var _mongoUrl = Nconf.get("mongoUrl");
+
+var _database;
+
+function save(facebookUrl, websiteUrl, title, emails, firstName, lastName, callback){
+	var document = createDbDocument(facebookUrl, websiteUrl, title, emails, firstName, lastName);
+	if (_database === undefined || _database == null) {
+		MongoClient.connect(_mongoUrl, function(err, db) {
 			if(err) return callback(err);
 			
-			database = db;
+			_database = db;
   			insertDocuments(db, document, callback);
 		});
 	}else{
-		insertDocuments(database, document, callback);
+		insertDocuments(_database, document, callback);
 	}
 }
 
-function insertDocuments(db, callback, callback) {
+function insertDocuments(db, document, callback) {
 	var collection = db.collection('customers');
 	collection.insert(document, function (err, result) {
 		if(err) return callback(err);
-
 		callback();
 	});
 }
 
-function createDbDocument(facebookUrl, websiteUrl){
+function createDbDocument(facebookUrl, websiteUrl, title, emails, firstName, lastName){
 	var document = 
 		{
 			facebookUrl : facebookUrl,
-			websiteUrl : websiteUrl
+			websiteUrl : websiteUrl,
+			title: title,
+			emails : emails,
+			firstName : firstName,
+			lastName : lastName
 		};
 		
 	return document;

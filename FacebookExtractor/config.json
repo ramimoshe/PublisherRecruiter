@@ -1,3 +1,4 @@
 {
-	"numberOfWorkers":2
+	"numberOfWorkers":2,
+	"mongoUrl" : "mongodb://localhost:27017/publisherRecruiter"
 }

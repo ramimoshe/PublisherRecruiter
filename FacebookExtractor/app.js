@@ -5,12 +5,10 @@ var Nconf = require('nconf');
 var WixProvider = require('./Providers/Wix.js');
 var Storage = require('./storage.js');
 
-Nconf.argv().env().file({ file: './config.json' });
-
-var numOfWorkers = Nconf.get("numberOfWorkers");;
+var _numOfWorkers = Nconf.get("numberOfWorkers");;
 
 if (cluster.isMaster) {
-	for (var i = 0; i < numOfWorkers; i++) {
+	for (var i = 0; i < _numOfWorkers; i++) {
 		console.log('master: about to form a worker');
 		cluster.fork();
 	}
@@ -54,10 +52,13 @@ function serverHandler(request, reply) {
 	Async.each(request.payload.items, 
 		function(item, callback) {
 			var siteUrl = addHttpIfNotExist(item.displayLink);
-			WixProvider.findFacebook(siteUrl, function(websiteUrl, facebookUrl){
-				saveData(websiteUrl, facebookUrl, item.title);
+			WixProvider.findPublisherInfo(siteUrl, function(websiteUrl, facebookUrl, emails){
+				console.log("findFacebook: " + siteUrl);
+				saveData(websiteUrl, facebookUrl, item.title, emails);
+				callback();
 			});
 		}, function(err){
+			console.log("finish handle request");
 			if(err) {
 			  console.log('Failed retrive data ' + err);
 			}
@@ -75,9 +76,9 @@ function addHttpIfNotExist(url) {
     return url;
 }
 
-function saveData(websiteUrl, facebookUrl, title) {
-	console.log("websiteUrl: " + websiteUrl + "\nfacebookUrl: " + facebookUrl);
-	Storage(facebookUrl, websiteUrl, null, null, function(err){
+function saveData(websiteUrl, facebookUrl, title, emails) {
+	console.log("websiteUrl: " + websiteUrl + "\nfacebookUrl: " + facebookUrl + "\ntitle: " + title + "\nemails: " + emails);
+	Storage.save(facebookUrl, websiteUrl, title, emails, null, null, function(err){
 		if (err){
 			console.log("Error: " + err);
 		}

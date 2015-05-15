@@ -2,21 +2,23 @@ var Request = require('request');
 var Url = require('url');
 var Zlib = require('zlib');
 var Async = require('async');
-var HttpClient = require('./httpClient');
+var HttpClient = require('../httpClient');
+var _ = require('underscore');
 
-var urlsResourcesStep1Pattern = new RegExp(/"masterPage":.*?]/);
-var urlsResourcesStep2Pattern = new RegExp(/\[.*/);
-var facebookFromJsonPattern = new RegExp(/www.facebook.com.*?"/);
-var mailPattern = new RegExp(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/);
+//TODO: add add regex to get 'pages' json section and get the mails from there
+var _urlsResourcesStep1Pattern = new RegExp(/"masterPage":.*?]/);
+var _urlsResourcesStep2Pattern = new RegExp(/\[.*/);
+var _facebookFromJsonPattern = new RegExp(/"http.?:\/\/www.facebook.com\/[a-z|A-z|0-9].*?"/);
+var _mailPattern = new RegExp(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/);
 
-function findFacebook(url, callback) {
+function findPublisherInfo(url, callback) {
 	HttpClient.get(url, function(err, body){
 		if (err) { return console.log(err);}
-		
+				
 		var resourcesUrls = getResourceJson(body);
 		if (resourcesUrls == null || resourcesUrls.length == 0) { return console.log("Failed to find facebook from " + url); }
 		
-		extractFacebookFromUrlResource(resourcesUrls[0], url, function (facebookUrl) {
+		extractFacebookFromUrlResource(resourcesUrls[0], function (facebookUrl) {	
 			extractEmailFromResourcesUrls(resourcesUrls, function (emails){
 				callback(url, facebookUrl, emails);	
 			});
@@ -24,26 +26,30 @@ function findFacebook(url, callback) {
 	});
 }
 
+
 function extractEmailFromResourcesUrls(resourcesUrls, callback) {
 	var emails = [];
 	Async.each(resourcesUrls, 
 		function(url, callback) {
-			
 			HttpClient.get(url, function(err, body){
 				if (err) { 
 					console.log(err);
+					callback(err);
 				}
-				var email = mailPattern.exec(body);
+				
+				var email = _mailPattern.exec(body);
 				if(email != undefined && email != null) { 
 					emails.push(email); 
 				}
+				callback();
 			});
 		}, function(err){
-			if( err ) {
+			if(err) {
 			  return console.log('Failed retrive emails ' + err);
 			}
 			
-			callback(emails);
+			var uniqMails = _.uniq(emails);
+			callback(uniqMails);
 		}
 	);
 }
@@ -52,22 +58,27 @@ function extractFacebookFromUrlResource(urlResourcesJson, callback) {
 	HttpClient.get(urlResourcesJson, function(err, body){
 		if (err) { return console.log(err);}
 		
-		var facebook = facebookFromJsonPattern.exec(body);
-		callback(null, facebook);
+		var facebook = _facebookFromJsonPattern.exec(body);
+		if (facebook instanceof String){
+			facebook = facebook.replace('"','');	
+		}
+		
+		callback(facebook);
 	});
 }
 
+//TODO: extract from all resource (from pages array from the main wix page)
 function getResourceJson(html) {
 	if (html == null || html == undefined) {
 		return null;
 	}
 
-	var result = urlsResourcesStep1Pattern.exec(html);
+	var result = _urlsResourcesStep1Pattern.exec(html);
 	if (result == null || result == undefined) {
 		return null;
 	}
 
-	result = urlsResourcesStep2Pattern.exec(result);
+	result = _urlsResourcesStep2Pattern.exec(result);
 	var jsonObj = JSON.parse(result);
 	if (jsonObj == undefined || jsonObj == null || !(jsonObj instanceof Array)) {
 		return null;
@@ -82,5 +93,5 @@ function getResourceJson(html) {
 
 
 module.exports = {
-	findFacebook: findFacebook
+	findPublisherInfo: findPublisherInfo
 };

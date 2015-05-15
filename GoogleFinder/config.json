@@ -7,12 +7,11 @@
 		"dateRestrict" : "y5",
 		"filter" : "1",
 		"alt" : "json",
-		"fields" : "items(displayLink,link,title),queries,searchInformation(formattedTotalResults,totalResults),url",
+		"fields" : "items(displayLink,title),queries,searchInformation/totalResults",
 		"urlPerPage" : 10
 	},
 	
 	"facebookExtractorUrlService" : "http://localhost:1234/wix",
-	"mongoUrl" : "mongodb://localhost:27017/publisherRecruiter",
 	"totalPages" : 1,
 	"overrideTotalPages" : null,
 	"runningInterval" : 60000
